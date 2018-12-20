@@ -8,11 +8,14 @@ set -e
 # Respect AWS_DEFAULT_OUTPUT if specified
 [ -n "$AWS_DEFAULT_OUTPUT" ] || export AWS_DEFAULT_OUTPUT=json
 
-# Capture output
-output=$( sh -c "aws $*" )
-
-# Preserve output for consumption by downstream actions
-echo "$output" > "${HOME}/${GITHUB_ACTION}.${AWS_DEFAULT_OUTPUT}"
-
-# Write output to STDOUT
-echo "$output"
+for cmd in "$@"; do
+    echo "Running 'aws $cmd'..."
+    if sh -c "aws $cmd"; then
+        # no op
+        echo "Successfully ran 'aws $cmd'"
+    else
+        exit_code=$?
+        echo "Failure running 'aws $cmd', exited with $exit_code"
+        exit $exit_code
+    fi
+done
